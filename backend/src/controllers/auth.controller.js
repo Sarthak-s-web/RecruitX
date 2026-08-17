@@ -61,15 +61,14 @@ const registerUser = async(req,res)=>{
         return res.status(201).json({
             message:"User registered successfully",
             user:{
-                userId:user._id,
+                id:user._id,
                 name:user.name,
                 email:user.email,
                 role:user.role
             },
             accessToken,
             refreshToken
-        }
-    )
+        })
         
     } catch (error) {
         console.log("Registraion error", error.message);
@@ -79,6 +78,72 @@ const registerUser = async(req,res)=>{
     }
 }
 
+const loginUser = async(req,res)=>{
+    try {
+        const{email,password}= req.body
+    
+        if(!email || !password){
+            return res.status(400).json({
+                message:"Email and Password is required"
+            })
+        }
+    
+        const user = await User.findOne({email}).select("+passwordHash")
+        if(!user)
+        {
+            return res.status(401).json({
+                message:"Invalid email or password"
+            })
+        }
+    
+        const isValidPassword = await bcrypt.compare(password,user.passwordHash)
+        if(!isValidPassword)
+        {
+            return res.status(401).json({
+                message:"Invalid email or password"
+            })
+        }
+    
+         const session = await Session.create({
+                userId: user._id,
+                refreshTokenHash: "temporary",
+                expiresAt: new Date(Date.now()+ 7*24*60*60*1000)
+            })
+    
+            const accessToken= generateAccessToken(user)
+            const refreshToken = generateRefreshToken(user, session._id);
+    
+            const refreshTokenHash = 
+            crypto.createHash("sha256")
+            .update(refreshToken)
+            .digest("hex")
+    
+            session.refreshTokenHash = refreshTokenHash;
+    
+            await session.save();
+    
+            return res.status(200).json({
+                message:"Login successfully",
+                user:{
+                    id:user._id,
+                    name:user.name,
+                    email:user.email,
+                    role:user.role
+                },
+                accessToken,
+                refreshToken
+            })
+    } catch (error) {
+        console.log("Login error",error.message);
+        return res.status(500).json({
+            message:"Internal Server error"
+        })
+           
+    }
+
+}
+
 module.exports = {
-    registerUser
+    registerUser,
+    loginUser
 }
