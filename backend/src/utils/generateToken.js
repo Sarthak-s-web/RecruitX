@@ -15,7 +15,7 @@ const generateAccessToken = (user)=>{
 const generateRefreshToken = (user,sessionId)=>{
     return jwt.sign({
         userId: user._id,
-        sessionId:sessionId._id       
+        sessionId:sessionId       
     },
     process.env.REFRESH_TOKEN_SECRET,
     {
@@ -23,6 +23,8 @@ const generateRefreshToken = (user,sessionId)=>{
     }
 );
 }
+
+
 
 module.exports ={
     generateAccessToken,

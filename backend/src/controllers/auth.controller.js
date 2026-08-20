@@ -2,6 +2,7 @@ const bcrypt= require("bcryptjs")
 const crypto = require("crypto")
 const User = require("../models/user.model")
 const Session = require("../models/session.model")
+const jwt = require("jsonwebtoken")
 
 const {generateAccessToken, generateRefreshToken} = require("../utils/generateToken")
 
@@ -143,7 +144,107 @@ const loginUser = async(req,res)=>{
 
 }
 
+const refreshAccessToken = async(req,res)=>{
+    try {
+        const {refreshToken} = req.body
+        if(!refreshToken)
+        {
+            return res.status(401).json({
+                message:"Refresh Token is required"
+            })
+        }
+    
+        const decoded = jwt.verify(refreshToken , process.env.REFRESH_TOKEN_SECRET);
+    
+        const refreshTokenHash= crypto.createHash("sha256").update(refreshToken).digest("hex")
+
+        const session = await Session.findOne({
+            _id: decoded.sessionId,
+            userId: decoded.userId,
+            refreshTokenHash
+        });
+
+        if (!session) {
+            return res.status(401).json({
+                message: "Invalid refresh token"
+            });
+        }
+
+        if (session.expiresAt < new Date()) {
+            return res.status(401).json({
+                message: "Session expired"
+            });
+        }
+
+        // 6. Find user
+        const user = await User.findById(decoded.userId);
+
+        if (!user) {
+            return res.status(401).json({
+                message: "User not found"
+            });
+        }
+
+         const accessToken = generateAccessToken(user);
+        // 8. Send response
+        return res.status(200).json({
+            message: "Access token refreshed successfully",
+            accessToken
+        });
+
+        
+    } catch (error) {
+        console.log("Refresh token error:", error.message);
+
+        return res.status(401).json({
+            message: "Invalid or expired refresh token"
+            
+    })
+}
+}
+
+const logoutUser = async(req,res)=>{
+    try {
+
+        const {refreshToken }= req.body
+        
+        if(!refreshToken)
+        {
+            return res.status(400).json({
+                message:"Refresh token is required"
+            })
+        }
+
+        const refreshTokenHash = crypto.createHash("sha256").update(refreshToken).digest("hex")
+
+        const session = await Session.findOneAndDelete({
+          refreshTokenHash  
+        })
+
+        if(!session)
+        {
+            return res.status(400).json({
+                message:"Invalid refresh token"
+            })
+        }
+
+        return res.status(200).json({
+            message:"Logout Successful"
+        })
+        
+    } catch (error) {
+        console.log("Logout error:", error.message);
+
+        return res.status(500).json({
+        message: "Internal server error"
+    })
+}
+
+}
+
 module.exports = {
     registerUser,
-    loginUser
+    loginUser,
+    refreshAccessToken,
+    logoutUser
 }
