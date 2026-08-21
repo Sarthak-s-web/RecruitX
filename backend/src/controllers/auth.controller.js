@@ -18,7 +18,6 @@ const registerUser = async(req,res)=>{
                 message:"Name, email, password is required"
             })
         }
-
         //3.Check if user already exists
         const existingUser = await User.findOne({email})
         if(existingUser){
