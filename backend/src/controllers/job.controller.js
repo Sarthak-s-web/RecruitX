@@ -62,8 +62,37 @@ const getAllJobs = async(req,res)=>{
     }
 };
 
+const getJobById = async(req,res)=>{
+
+    try {
+
+        const {id} = req.params
+
+        const job = await Job.findById(id).select("-createdBy")
+        
+        if(!job){
+            return res.status(400).json({
+                message:"Job not found"
+            })
+        }
+
+        return res.status(200).json({
+            message:"Job fetched successfully",
+            job
+        })
+
+    } catch (error) {
+        console.log("Get job by id error:",erro);
+
+        return res.status(500).json({
+            message:"Internal Server error"
+        })
+    }
+}
+
 
 module.exports = {
     createJob,
-    getAllJobs
+    getAllJobs,
+    getJobById
 }
