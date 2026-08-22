@@ -4,14 +4,14 @@ const authMiddlewar = async(req,res,next)=>{
     try {
         const authHeader = req.headers.authorization;
 
-        if(!authHeader || authHeader.startsWith("Bearer "))
+        if(!authHeader || !authHeader.startsWith("Bearer "))
         {
             return res.status(401).json({
                 message:"Access token is required"
             })
         }
 
-        const accessToken = authHeader.spilt(" ")[1]
+        const accessToken = authHeader.split(" ")[1]
 
         const decoded = jwt.verify(
             accessToken,
