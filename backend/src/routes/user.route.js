@@ -3,8 +3,8 @@ const express = require("express")
 const router = express.Router()
 
 const {getProfile} = require("../controllers/user.controller")
-const authMiddlewar = require("../middlewares/auth.middlewar")
+const authMiddleware = require("../middlewares/auth.middlewar")
 
-router.get("/profile", authMiddlewar,getProfile)
+router.get("/profile", authMiddleware,getProfile)
 
 module.exports = router;
