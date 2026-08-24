@@ -90,9 +90,106 @@ const getJobById = async(req,res)=>{
     }
 }
 
+const updateJob = async(req,res)=>{
+    try {
+        const{ id } = req.params
+    
+        const {
+                title,
+                company,
+                description,
+                location,
+                salary,
+                skills,
+                jobType
+            } = req.body;
+    
+        const job = await Job.findById(id)
+    
+        if(!job){
+            return res.status(404).json({
+                message:"Job not found"
+            })
+        }
+    
+        if(job.createdBy.toString() !== req.user.userId){
+            return res.status(403).json({
+                message:"You are not allowed to update this job"
+            })
+        }
+    
+        const updatedJob = await Job.findByIdAndUpdate(
+            id,
+            {
+                title,
+                company,
+                description,
+                location,
+                salary,
+                skills,
+                jobType  
+            },
+             {
+                returnDocument: "after",
+                runValidators: true
+            }
+        ).select("-createdBy")
+    
+        return res.status(200).json({
+            message:"Job updated successfully",
+            job:updatedJob
+        })
+    
+    } catch (error) {
+        console.log("Update Job error",error);
+
+        return res.status(500).json({
+            message:"Internal Server error"
+        })
+        
+    }
+
+}
+
+const deleteJob = async(req, res)=>{
+    try {
+        
+        const { id } = req.params
+
+        const job = await Job.findById(id)
+
+        if(!job){
+            return res.status(404).json({
+                message:"Job not found"
+            })
+        }
+
+        if(job.createdBy.toString() !== req.user.userId){
+            return res.status(403).json({
+                message:"You are not allowed to delete this job"
+            })
+        }
+
+        await Job.findByIdAndDelete(id)
+
+        return res.status(200).json({
+            message:"Job deleted successfully"
+        });
+
+    } catch (error) {
+        console.log("Delete job error: ", error.message);
+
+        return res.status(500).json({
+            message:"Internal server error"
+        })
+    }
+};
+
 
 module.exports = {
     createJob,
     getAllJobs,
-    getJobById
+    getJobById,
+    updateJob,
+    deleteJob
 }
