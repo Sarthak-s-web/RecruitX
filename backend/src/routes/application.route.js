@@ -6,7 +6,8 @@ const roleMiddleware = require("../middlewares/role.middleware")
 
 const {applyJob,
     getJobApplication,
-    updateApplicationStatus
+    updateApplicationStatus,
+    getMyApplication
 } = require("../controllers/application.controller")
 
 const upload = require("../middlewares/upload.middleware")
@@ -33,6 +34,8 @@ router.patch(
     roleMiddleware("RECRUITER"),
     updateApplicationStatus
 );
+
+router.get("/my",authMiddleware, roleMiddleware("JOB_SEEKER"),getMyApplication)
 
 
 

@@ -79,7 +79,7 @@ const getJobApplication = async(req,res)=>{
         const application = await Application.find({
             job:jobId
         }).populate("applicant","name email")
-        .select("-_v")
+        .select("-__v")
     
         return res.status(200).json({
             message:"Application fetched successfully",
@@ -152,8 +152,32 @@ const updateApplicationStatus = async(req,res)=>{
     }
 }
 
+const getMyApplication = async(req,res)=>{
+
+    try {
+        const userId = req.user.userId
+    
+        const applications = await Application.find({
+            applicant:userId
+        }).populate("job", "title company location jobType salary").select("-__v");
+        
+    
+        return res.status(200).json({
+            message:"Applications fetched successfully",
+            applications
+        })
+    
+    } catch (error) {
+        console.log("Get my application error:",error.message);
+        return res.status(500).json({
+            message:"Internal Server error"
+        })
+    }
+}
+
 module.exports = {
     applyJob,
     getJobApplication,
-    updateApplicationStatus
+    updateApplicationStatus,
+    getMyApplication
 }
