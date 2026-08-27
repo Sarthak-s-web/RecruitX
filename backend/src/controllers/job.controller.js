@@ -46,7 +46,7 @@ const createJob = async(req,res)=>{
 const getAllJobs = async(req,res)=>{
     try {
 
-        const {search, location} = req.query
+        const {search, location,jobType,skills} = req.query
 
         let filter ={}
 
@@ -74,6 +74,17 @@ const getAllJobs = async(req,res)=>{
                         $regex:location,
                         $options:"i"
                     }
+        }
+        
+        if(jobType){
+            filter.jobType = jobType.toUpperCase()
+        }
+
+        if(skills){
+            filter.skills = {
+                $regex:skills,
+                $options:"i"
+            }
         }
 
         const jobs = await Job.find(filter).select("-createdBy")
