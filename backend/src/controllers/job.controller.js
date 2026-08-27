@@ -46,7 +46,37 @@ const createJob = async(req,res)=>{
 const getAllJobs = async(req,res)=>{
     try {
 
-        const jobs = await Job.find() .select("-createdBy").sort({createdAt:-1})
+        const {search, location} = req.query
+
+        let filter ={}
+
+        if(search){
+            filter = {
+                $or:[
+                    {
+                        title:{
+                            $regex:search,
+                            $options:"i"
+                        },
+                    },
+                    {
+                        company:{
+                            $regex: search,
+                            $options: "i"
+                        }
+                    }
+                ]
+            }
+        }
+
+        if(location){
+            filter.location ={
+                        $regex:location,
+                        $options:"i"
+                    }
+        }
+
+        const jobs = await Job.find(filter).select("-createdBy")
 
         return res.status(200).json({
             message:"Jobs fetched successfully",
@@ -82,7 +112,7 @@ const getJobById = async(req,res)=>{
         })
 
     } catch (error) {
-        console.log("Get job by id error:",erro);
+        console.log("Get job by id error:",error);
 
         return res.status(500).json({
             message:"Internal Server error"
