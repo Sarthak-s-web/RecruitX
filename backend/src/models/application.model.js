@@ -37,7 +37,7 @@ const applicationSchema  = new mongoose.Schema({
 );
 
 applicationSchema.index(
-    {application:1, job:1},
+    {applicant:1, job:1},
     {unique:true}
 );
 
