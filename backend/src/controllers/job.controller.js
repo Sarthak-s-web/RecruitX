@@ -1,5 +1,6 @@
 const Job = require("../models/job.model")
 const Application = require("../models/application.model")
+const mongoose = require("mongoose")
 
 const createJob = async(req,res)=>{
     try {
@@ -144,10 +145,16 @@ const getJobById = async(req,res)=>{
 
         const {id} = req.params
 
+         if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                message: "Invalid job ID"
+            });
+        }
+
         const job = await Job.findById(id).select("-createdBy")
         
         if(!job){
-            return res.status(400).json({
+            return res.status(404).json({
                 message:"Job not found"
             })
         }
@@ -169,6 +176,12 @@ const getJobById = async(req,res)=>{
 const updateJob = async(req,res)=>{
     try {
         const{ id } = req.params
+
+        if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                message: "Invalid job ID"
+            });
+        }
     
         const {
                 title,
@@ -231,6 +244,12 @@ const deleteJob = async(req, res)=>{
     try {
         
         const { id } = req.params
+
+         if (!mongoose.isValidObjectId(id)) {
+            return res.status(400).json({
+                message: "Invalid job ID"
+            });
+        }
 
         const job = await Job.findById(id)
 

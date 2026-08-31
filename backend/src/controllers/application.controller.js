@@ -2,9 +2,18 @@ const Application = require("../models/application.model")
 const Job = require("../models/job.model")
 const { uploadResume } = require("../utils/cloudinary")
 
+const mongoose = require("mongoose")
+
 const applyJob = async(req,res)=>{
     try {
         const { jobId } = req.params
+
+        if (!mongoose.isValidObjectId(jobId)) {
+            return res.status(400).json({
+                message: "Invalid job ID"
+            });
+        }
+
         const {coverLetter} =req.body
         const job =await Job.findById(jobId)
 
@@ -61,6 +70,12 @@ const getJobApplication = async(req,res)=>{
 
     try {
         const {jobId} = req.params
+
+        if (!mongoose.isValidObjectId(jobId)) {
+            return res.status(400).json({
+                message: "Invalid job ID"
+            });
+        }
     
         const job = await Job.findById(jobId)
     
@@ -97,6 +112,13 @@ const updateApplicationStatus = async(req,res)=>{
 
     try {
         const {applicationId} = req.params;
+
+        if (!mongoose.isValidObjectId(applicationId)) {
+            return res.status(400).json({
+                message: "Invalid application ID"
+            });
+        }
+
         const {status } = req.body
         
         const application = await Application.findById(applicationId)
@@ -120,6 +142,9 @@ const updateApplicationStatus = async(req,res)=>{
                 message:"You are not allowed to make changes"
             })
         }
+
+        const normalizedStatus = status?.toUpperCase();
+
     
         const allowedStatus = [
             "APPLIED",
@@ -128,13 +153,13 @@ const updateApplicationStatus = async(req,res)=>{
             "HIRED"
         ];
     
-        if(!allowedStatus.includes(status)){
+        if(!allowedStatus.includes(normalizedStatus)){
             return res.status(400).json({
                 message: "Invalid application status"
             })
         }
     
-        application.status = status
+        application.status = normalizedStatus;
     
         await application.save();
     

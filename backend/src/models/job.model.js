@@ -9,7 +9,7 @@ const jobSchema = new mongoose.Schema({
     company:{
         type:String,
         required:true,
-        trime:true
+        trim:true
     },
     description:{
         type:String,
