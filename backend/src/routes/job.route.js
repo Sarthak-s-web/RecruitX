@@ -5,6 +5,7 @@ const router = express.Router()
 const { 
     createJob,
     getAllJobs,
+    getMyJobs,
     getJobById,
     updateJob,
     deleteJob
@@ -16,6 +17,13 @@ const roleMiddleware = require("../middlewares/role.middleware")
 router.post("/" ,authMiddleware,roleMiddleware("RECRUITER"), createJob);
 
 router.get("/",authMiddleware, getAllJobs)
+
+router.get(
+    "/my",
+    authMiddleware,
+    roleMiddleware("RECRUITER"),
+    getMyJobs
+);
 
 router.get("/:id",getJobById)
 

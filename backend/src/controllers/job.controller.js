@@ -1,4 +1,5 @@
 const Job = require("../models/job.model")
+const Application = require("../models/application.model")
 
 const createJob = async(req,res)=>{
     try {
@@ -100,6 +101,40 @@ const getAllJobs = async(req,res)=>{
         return res.status(500).json({
             message:"Internal Server error"
         })
+    }
+};
+
+const getMyJobs = async (req, res) => {
+    try {
+        const jobs = await Job.find({
+            createdBy: req.user.userId
+        }).select("-createdBy");
+
+        const jobsWithApplications = await Promise.all(
+            jobs.map(async (job)=>{
+
+                const applicationCount = await Application.countDocuments({
+                    job:job._id
+                })
+
+                return{
+                    ...job.toObject(),
+                    applicationCount
+                }
+            })
+        )
+
+        return res.status(200).json({
+            message: "Your jobs fetched successfully",
+            jobs:jobsWithApplications
+        });
+
+    } catch (error) {
+        console.log("Get my jobs error:", error.message);
+
+        return res.status(500).json({
+            message: "Internal server error"
+        });
     }
 };
 
@@ -232,5 +267,6 @@ module.exports = {
     getAllJobs,
     getJobById,
     updateJob,
-    deleteJob
+    deleteJob,
+    getMyJobs
 }

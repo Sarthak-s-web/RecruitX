@@ -7,7 +7,8 @@ const roleMiddleware = require("../middlewares/role.middleware")
 const {applyJob,
     getJobApplication,
     updateApplicationStatus,
-    getMyApplication
+    getMyApplication,
+    getRecruiterDashboard
 } = require("../controllers/application.controller")
 
 const upload = require("../middlewares/upload.middleware")
@@ -28,6 +29,13 @@ router.get(
     getJobApplication
 );
 
+router.get(
+    "/dashboard",
+    authMiddleware,
+    roleMiddleware("RECRUITER"),
+    getRecruiterDashboard
+);
+
 router.patch(
     "/:applicationId/status",
     authMiddleware,
@@ -36,6 +44,7 @@ router.patch(
 );
 
 router.get("/my",authMiddleware, roleMiddleware("JOB_SEEKER"),getMyApplication)
+
 
 
 

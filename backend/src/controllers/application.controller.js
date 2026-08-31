@@ -175,9 +175,69 @@ const getMyApplication = async(req,res)=>{
     }
 }
 
+const getRecruiterDashboard = async(req,res)=>{
+    try {
+
+        const jobs = await Job.find({
+            createdBy:req.user.userId
+        })
+
+        const jobIds = jobs.map((job)=> job._id)
+
+        const totalJobs = jobs.length;
+
+        const totalApplications = await Application.countDocuments({
+            job:{
+                $in:jobIds
+            }
+        });
+
+        const shortlisted = await Application.countDocuments({
+            job:{
+                $in:jobIds
+            },
+            status:"SHORTLISTED"
+        })
+
+        const rejected = await Application.countDocuments({
+            job:{
+                $in:jobIds
+            },
+            status:"REJECTED"
+        })
+
+        const hired = await Application.countDocuments({
+            job:{
+                $in:jobIds
+            },
+            status:"HIRED"
+        })
+
+        return res.status(200).json({
+            message:"Recruiter dashboard fetched successfully",
+            dashboard:{
+                totalJobs,
+                totalApplications,
+                shortlisted,
+                hired,
+                rejected
+            }
+            
+        })
+
+        
+    } catch (error) {
+        console.log("Get recruiter dashboard error:",error.message);
+        return res.status(500).json({
+            message:"Internal server error"
+        })
+    }
+}
+
 module.exports = {
     applyJob,
     getJobApplication,
     updateApplicationStatus,
-    getMyApplication
+    getMyApplication,
+    getRecruiterDashboard
 }
