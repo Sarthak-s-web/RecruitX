@@ -15,11 +15,42 @@ const createJob = async(req,res)=>{
             jobType
         } = req.body
 
-        if(!title || !company || !description || !location || !salary || !skills || !jobType)
+        if(!title || !company || !description || !location || salary===undefined || !skills || !jobType)
         {
             return res.status(400).json({
                 message:"All fields are required"
             })
+        }
+
+        if (typeof salary !== "number" || salary < 0) {
+            return res.status(400).json({
+                message: "Salary must be a valid positive number"
+            });
+        }
+
+        if (!Array.isArray(skills) || skills.length === 0) {
+            return res.status(400).json({
+                message: "Skills must be a non-empty array"
+            });
+        }
+
+        if (typeof jobType !== "string") {
+            return res.status(400).json({
+                message: "Job type must be a string"
+        });
+}
+        const normalizedJobType = jobType.toUpperCase();
+
+        const allowedJobTypes = [
+            "FULL_TIME",
+            "PART_TIME",
+            "INTERNSHIP"
+        ];
+
+        if (!allowedJobTypes.includes(normalizedJobType)) {
+            return res.status(400).json({
+                message: "Invalid job type"
+            });
         }
 
         const job = await Job.create({
@@ -29,11 +60,11 @@ const createJob = async(req,res)=>{
             location,
             salary,
             skills,
-            jobType,
+            jobType:normalizedJobType,
             createdBy:req.user.userId
         });
 
-        return res.status(200).json({
+        return res.status(201).json({
             message:"Job created successfully"
         })
 
@@ -206,23 +237,84 @@ const updateJob = async(req,res)=>{
                 message:"You are not allowed to update this job"
             })
         }
-    
-        const updatedJob = await Job.findByIdAndUpdate(
-            id,
-            {
-                title,
-                company,
-                description,
-                location,
-                salary,
-                skills,
-                jobType  
-            },
-             {
-                returnDocument: "after",
-                runValidators: true
+
+        if (salary !== undefined) {
+            if (typeof salary !== "number" || salary < 0) {
+                return res.status(400).json({
+                    message: "Salary must be a valid positive number"
+                });
             }
-        ).select("-createdBy")
+        }
+
+        if (skills !== undefined) {
+            if (!Array.isArray(skills) || skills.length === 0) {
+                return res.status(400).json({
+                    message: "Skills must be a non-empty array"
+                });
+            }
+        }
+
+        if (title !== undefined && (typeof title !== "string" || !title.trim())) {
+            return res.status(400).json({
+                message: "Title cannot be empty"
+            });
+        }
+
+        if (company !== undefined && (typeof company !== "string" || !company.trim())) {
+            return res.status(400).json({
+                message: "Company cannot be empty"
+            });
+        }
+
+        if (description !== undefined && (typeof description !== "string" || !description.trim())) {
+            return res.status(400).json({
+                message: "Description cannot be empty"
+            });
+        }
+
+        if (location !== undefined && (typeof location !== "string" || !location.trim())) {
+            return res.status(400).json({
+                message: "Location cannot be empty"
+            });
+        }
+
+        let normalizedJobType;
+
+        if (jobType !== undefined) {
+
+            if (typeof jobType !== "string") {
+                return res.status(400).json({
+                    message: "Job type must be a string"
+                });
+            }   
+
+            normalizedJobType = jobType.toUpperCase();
+
+            const allowedJobTypes = [
+                "FULL_TIME",
+                "PART_TIME",
+                "INTERNSHIP"
+            ];
+
+            if (!allowedJobTypes.includes(normalizedJobType)) {
+                return res.status(400).json({
+                    message: "Invalid job type"
+                });
+            }
+        }
+    
+        if (title !== undefined) job.title = title.trim();
+        if (company !== undefined) job.company = company.trim();
+        if (description !== undefined) job.description = description.trim();
+        if (location !== undefined) job.location = location.trim();
+        if (salary !== undefined) job.salary = salary;
+        if (skills !== undefined) job.skills = skills;
+        if (normalizedJobType !== undefined) job.jobType = normalizedJobType;
+
+        await job.save();
+
+        const updatedJob = job.toObject();
+        delete updatedJob.createdBy;
     
         return res.status(200).json({
             message:"Job updated successfully",
