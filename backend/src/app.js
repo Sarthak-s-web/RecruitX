@@ -1,9 +1,14 @@
 const express = require("express");
 const app=express();
+const cors = require("cors")
 const authRoute = require("./routes/auth.route");
 const userRoutes = require("./routes/user.route");
 const jobRoutes = require("./routes/job.route")
 const applicantRoutes = require("./routes/application.route")
+
+app.use(cors({
+    origin:"http://localhost:5173"
+}))
 
 app.use(express.json());
 
