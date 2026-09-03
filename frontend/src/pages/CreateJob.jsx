@@ -11,6 +11,7 @@ import { JOB_TYPES, formatJobType, getErrorMessage } from "../utils/constants";
 
 export default function CreateJob() {
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
     title: "",
     company: "",
@@ -20,46 +21,81 @@ export default function CreateJob() {
     skills: "",
     jobType: "FULL_TIME",
   });
+
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const validate = () => {
     const e = {};
-    if (!form.title.trim()) e.title = "Job title is required";
-    if (!form.company.trim()) e.company = "Company name is required";
-    if (!form.description.trim()) e.description = "Job description is required";
-    if (form.salary && (isNaN(Number(form.salary)) || Number(form.salary) < 0))
+
+    if (!form.title.trim()) {
+      e.title = "Job title is required";
+    }
+
+    if (!form.company.trim()) {
+      e.company = "Company name is required";
+    }
+
+    if (!form.description.trim()) {
+      e.description = "Job description is required";
+    }
+
+    if (!form.salary) {
+      e.salary = "Salary is required";
+    } else if (
+      isNaN(Number(form.salary)) ||
+      Number(form.salary) < 0
+    ) {
       e.salary = "Salary must be a positive number";
+    }
+
     setErrors(e);
+
     return Object.keys(e).length === 0;
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+
     if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: undefined });
+      setErrors({
+        ...errors,
+        [e.target.name]: undefined,
+      });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setApiError("");
+
     if (!validate()) return;
+
     setLoading(true);
+
     try {
       const payload = {
         title: form.title.trim(),
         company: form.company.trim(),
         description: form.description.trim(),
         location: form.location.trim(),
-        salary: form.salary ? Number(form.salary) : undefined,
+        salary: Number(form.salary),
         jobType: form.jobType,
         skills: form.skills
-          ? form.skills.split(",").map((s) => s.trim()).filter(Boolean)
+          ? form.skills
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
           : [],
       };
+
       await jobService.create(payload);
+
       navigate("/recruiter/jobs", { replace: true });
     } catch (err) {
       setApiError(getErrorMessage(err));
@@ -79,14 +115,27 @@ export default function CreateJob() {
       </Link>
 
       <div className="card p-6 sm:p-8 animate-slide-up">
-        <h1 className="text-2xl font-bold text-slate-900">Post a New Job</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Post a New Job
+        </h1>
+
         <p className="mt-1 text-sm text-slate-500">
           Fill in the details below to create a new job posting
         </p>
 
-        {apiError && <ErrorMessage message={apiError} onClose={() => setApiError("")} className="mt-4" />}
+        {apiError && (
+          <ErrorMessage
+            message={apiError}
+            onClose={() => setApiError("")}
+            className="mt-4"
+          />
+        )}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 space-y-5"
+          noValidate
+        >
           <Input
             label="Job Title"
             name="title"
@@ -96,6 +145,7 @@ export default function CreateJob() {
             error={errors.title}
             required
           />
+
           <Input
             label="Company"
             name="company"
@@ -105,6 +155,7 @@ export default function CreateJob() {
             error={errors.company}
             required
           />
+
           <Textarea
             label="Description"
             name="description"
@@ -115,6 +166,7 @@ export default function CreateJob() {
             rows={6}
             required
           />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Location"
@@ -123,6 +175,7 @@ export default function CreateJob() {
               onChange={handleChange}
               placeholder="e.g. San Francisco, CA"
             />
+
             <Input
               label="Salary (USD)"
               name="salary"
@@ -132,8 +185,10 @@ export default function CreateJob() {
               placeholder="e.g. 80000"
               error={errors.salary}
               min="0"
+              required
             />
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Job Type"
@@ -148,6 +203,7 @@ export default function CreateJob() {
                 </option>
               ))}
             </Select>
+
             <Input
               label="Skills (comma separated)"
               name="skills"
@@ -157,7 +213,11 @@ export default function CreateJob() {
             />
           </div>
 
-          <Button type="submit" loading={loading} className="w-full">
+          <Button
+            type="submit"
+            loading={loading}
+            className="w-full"
+          >
             <Plus className="h-4 w-4" />
             Create Job Posting
           </Button>
@@ -166,3 +226,4 @@ export default function CreateJob() {
     </div>
   );
 }
+

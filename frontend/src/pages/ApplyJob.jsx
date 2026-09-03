@@ -26,23 +26,33 @@ export default function ApplyJob() {
     const fetchJob = async () => {
       try {
         const res = await jobService.getById(id);
-        setJob(res.data);
+
+        // Backend returns { message, job }
+        setJob(res.data.job);
       } catch (err) {
         setError(getErrorMessage(err));
       } finally {
         setLoadingJob(false);
       }
     };
+
     fetchJob();
   }, [id]);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
         setError("Resume file must be smaller than 5MB.");
         return;
       }
+
+      if (file.type !== "application/pdf") {
+        setError("Only PDF files are allowed.");
+        return;
+      }
+
       setResume(file);
       setError("");
     }
@@ -58,12 +68,14 @@ export default function ApplyJob() {
     }
 
     setSubmitting(true);
+
     try {
       const formData = new FormData();
       formData.append("resume", resume);
       formData.append("coverLetter", coverLetter);
 
       await applicationService.apply(id, formData);
+
       setSuccess(true);
     } catch (err) {
       setError(getErrorMessage(err));
@@ -79,14 +91,21 @@ export default function ApplyJob() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success-100">
             <CheckCircle2 className="h-8 w-8 text-success-600" />
           </div>
-          <h1 className="mt-4 text-2xl font-bold text-slate-900">Application Submitted!</h1>
+
+          <h1 className="mt-4 text-2xl font-bold text-slate-900">
+            Application Submitted!
+          </h1>
+
           <p className="mt-2 text-sm text-slate-500">
-            Your application for {job?.title} at {job?.company} has been submitted successfully.
+            Your application for {job?.title} at {job?.company} has been
+            submitted successfully.
           </p>
+
           <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
             <Link to="/my-applications" className="btn-primary">
               View My Applications
             </Link>
+
             <Link to="/jobs" className="btn-secondary">
               Browse More Jobs
             </Link>
@@ -115,7 +134,10 @@ export default function ApplyJob() {
       </Link>
 
       <div className="card p-6 sm:p-8 animate-slide-up">
-        <h1 className="text-2xl font-bold text-slate-900">Apply for this position</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Apply for this position
+        </h1>
+
         {job && (
           <p className="mt-1 text-sm text-slate-500">
             {job.title} at {job.company}
@@ -127,18 +149,23 @@ export default function ApplyJob() {
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">
           {/* Resume upload */}
           <div>
-            <label className="label">Resume (PDF, DOC, DOCX - max 5MB)</label>
+            <label className="label">
+              Resume (PDF - max 5MB)
+            </label>
+
             <div className="mt-1 flex items-center gap-3">
               <label className="btn-secondary cursor-pointer">
                 <Upload className="h-4 w-4" />
                 Choose File
+
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf,application/pdf"
                   onChange={handleFileChange}
                   className="hidden"
                 />
               </label>
+
               {resume && (
                 <span className="flex items-center gap-1.5 text-sm text-slate-600">
                   <FileText className="h-4 w-4 text-primary-600" />
@@ -146,8 +173,9 @@ export default function ApplyJob() {
                 </span>
               )}
             </div>
+
             <p className="mt-1 text-xs text-slate-400">
-              The resume field must be a file upload.
+              Only PDF files up to 5MB are allowed.
             </p>
           </div>
 
@@ -160,7 +188,11 @@ export default function ApplyJob() {
             rows={6}
           />
 
-          <Button type="submit" loading={submitting} className="w-full">
+          <Button
+            type="submit"
+            loading={submitting}
+            className="w-full"
+          >
             Submit Application
           </Button>
         </form>
@@ -168,3 +200,4 @@ export default function ApplyJob() {
     </div>
   );
 }
+

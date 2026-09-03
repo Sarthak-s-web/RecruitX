@@ -176,23 +176,29 @@ const getJobById = async(req,res)=>{
 
         const {id} = req.params
 
-         if (!mongoose.isValidObjectId(id)) {
+        if (!mongoose.isValidObjectId(id)) {
             return res.status(400).json({
                 message: "Invalid job ID"
             });
         }
 
-        const job = await Job.findById(id).select("-createdBy")
-        
+        const job = await Job.findById(id)
+            .populate("createdBy", "name email");
+
         if(!job){
             return res.status(404).json({
                 message:"Job not found"
             })
         }
 
+        const jobData = job.toObject();
+
+        jobData.recruiter = jobData.createdBy;
+        delete jobData.createdBy;
+
         return res.status(200).json({
             message:"Job fetched successfully",
-            job
+            job: jobData
         })
 
     } catch (error) {
@@ -357,6 +363,7 @@ const deleteJob = async(req, res)=>{
             })
         }
 
+        await Application.deleteMany({ job: id });
         await Job.findByIdAndDelete(id)
 
         return res.status(200).json({

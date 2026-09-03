@@ -13,6 +13,7 @@ import { JOB_TYPES, formatJobType, getErrorMessage } from "../utils/constants";
 export default function EditJob() {
   const { id } = useParams();
   const navigate = useNavigate();
+
   const [form, setForm] = useState({
     title: "",
     company: "",
@@ -22,6 +23,7 @@ export default function EditJob() {
     skills: "",
     jobType: "FULL_TIME",
   });
+
   const [errors, setErrors] = useState({});
   const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,13 +33,19 @@ export default function EditJob() {
     const fetchJob = async () => {
       try {
         const res = await jobService.getById(id);
-        const job = res.data;
+
+        // Backend returns { message, job }
+        const job = res.data.job;
+
         setForm({
           title: job.title || "",
           company: job.company || "",
           description: job.description || "",
           location: job.location || "",
-          salary: job.salary !== undefined && job.salary !== null ? String(job.salary) : "",
+          salary:
+            job.salary !== undefined && job.salary !== null
+              ? String(job.salary)
+              : "",
           skills: Array.isArray(job.skills) ? job.skills.join(", ") : "",
           jobType: job.jobType || "FULL_TIME",
         });
@@ -47,45 +55,81 @@ export default function EditJob() {
         setLoading(false);
       }
     };
+
     fetchJob();
   }, [id]);
 
   const validate = () => {
     const e = {};
-    if (!form.title.trim()) e.title = "Job title is required";
-    if (!form.company.trim()) e.company = "Company name is required";
-    if (!form.description.trim()) e.description = "Job description is required";
-    if (form.salary && (isNaN(Number(form.salary)) || Number(form.salary) < 0))
+
+    if (!form.title.trim()) {
+      e.title = "Job title is required";
+    }
+
+    if (!form.company.trim()) {
+      e.company = "Company name is required";
+    }
+
+    if (!form.description.trim()) {
+      e.description = "Job description is required";
+    }
+
+    if (!form.salary) {
+      e.salary = "Salary is required";
+    } else if (
+      isNaN(Number(form.salary)) ||
+      Number(form.salary) < 0
+    ) {
       e.salary = "Salary must be a positive number";
+    }
+
     setErrors(e);
+
     return Object.keys(e).length === 0;
   };
 
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
+
     if (errors[e.target.name]) {
-      setErrors({ ...errors, [e.target.name]: undefined });
+      setErrors({
+        ...errors,
+        [e.target.name]: undefined,
+      });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
-    if (!validate()) return;
+
+    if (!validate()) {
+      return;
+    }
+
     setSubmitting(true);
+
     try {
       const payload = {
         title: form.title.trim(),
         company: form.company.trim(),
         description: form.description.trim(),
         location: form.location.trim(),
-        salary: form.salary ? Number(form.salary) : undefined,
+        salary: Number(form.salary),
         jobType: form.jobType,
         skills: form.skills
-          ? form.skills.split(",").map((s) => s.trim()).filter(Boolean)
+          ? form.skills
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
           : [],
       };
+
       await jobService.update(id, payload);
+
       navigate("/recruiter/jobs", { replace: true });
     } catch (err) {
       setApiError(getErrorMessage(err));
@@ -113,14 +157,27 @@ export default function EditJob() {
       </Link>
 
       <div className="card p-6 sm:p-8 animate-slide-up">
-        <h1 className="text-2xl font-bold text-slate-900">Edit Job</h1>
+        <h1 className="text-2xl font-bold text-slate-900">
+          Edit Job
+        </h1>
+
         <p className="mt-1 text-sm text-slate-500">
           Update the details of your job posting
         </p>
 
-        {apiError && <ErrorMessage message={apiError} onClose={() => setApiError("")} className="mt-4" />}
+        {apiError && (
+          <ErrorMessage
+            message={apiError}
+            onClose={() => setApiError("")}
+            className="mt-4"
+          />
+        )}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate>
+        <form
+          onSubmit={handleSubmit}
+          className="mt-6 space-y-5"
+          noValidate
+        >
           <Input
             label="Job Title"
             name="title"
@@ -129,6 +186,7 @@ export default function EditJob() {
             error={errors.title}
             required
           />
+
           <Input
             label="Company"
             name="company"
@@ -137,6 +195,7 @@ export default function EditJob() {
             error={errors.company}
             required
           />
+
           <Textarea
             label="Description"
             name="description"
@@ -146,6 +205,7 @@ export default function EditJob() {
             rows={6}
             required
           />
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Location"
@@ -153,6 +213,7 @@ export default function EditJob() {
               value={form.location}
               onChange={handleChange}
             />
+
             <Input
               label="Salary (USD)"
               name="salary"
@@ -161,8 +222,10 @@ export default function EditJob() {
               onChange={handleChange}
               error={errors.salary}
               min="0"
+              required
             />
           </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Select
               label="Job Type"
@@ -177,6 +240,7 @@ export default function EditJob() {
                 </option>
               ))}
             </Select>
+
             <Input
               label="Skills (comma separated)"
               name="skills"
@@ -185,7 +249,11 @@ export default function EditJob() {
             />
           </div>
 
-          <Button type="submit" loading={submitting} className="w-full">
+          <Button
+            type="submit"
+            loading={submitting}
+            className="w-full"
+          >
             Save Changes
           </Button>
         </form>
@@ -193,3 +261,4 @@ export default function EditJob() {
     </div>
   );
 }
+

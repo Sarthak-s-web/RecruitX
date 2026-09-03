@@ -12,7 +12,6 @@ import {
 import { applicationService } from "../services";
 import StatusBadge from "../components/StatusBadge";
 import Select from "../components/Select";
-import LoadingSpinner from "../components/LoadingSpinner";
 import ErrorMessage from "../components/ErrorMessage";
 import { ApplicationRowSkeleton } from "../components/Skeleton";
 import {
@@ -29,17 +28,17 @@ export default function JobApplications() {
   const [updatingId, setUpdatingId] = useState(null);
 
   const fetchApplications = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await applicationService.getByJob(jobId);
-      setApplications(Array.isArray(res.data) ? res.data : res.data.applications || []);
-    } catch (err) {
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  setError("");
+  try {
+    const res = await applicationService.getByJob(jobId);
+    setApplications(Array.isArray(res.data.application) ? res.data.application : []);
+  } catch (err) {
+    setError(getErrorMessage(err));
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
     fetchApplications();
@@ -141,10 +140,10 @@ export default function JobApplications() {
                       </div>
                     )}
 
-                    {app.resume && (
+                    {app.resumeUrl && (
                       <div className="mt-3">
                         <a
-                          href={app.resume}
+                          href={app.resumeUrl}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="flex items-center gap-1.5 text-sm text-primary-600 hover:text-primary-700 transition-colors"

@@ -10,7 +10,13 @@ const registerUser = async(req,res)=>{
     try {
 
         //1. Get data from request
-        const{name, email ,password,role} = req.body;
+        const { name, email, password, role } = req.body;
+
+        if (role && role !== "JOB_SEEKER" && role !== "RECRUITER") {
+            return res.status(400).json({
+                message: "Invalid role"
+            });
+        }
 
         //2. Validate user
         if(!name || !email || !password){
