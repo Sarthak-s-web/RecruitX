@@ -25,7 +25,7 @@ router.get(
     getMyJobs
 );
 
-router.get("/:id",getJobById)
+router.get("/:id",authMiddleware,getJobById)
 
 router.patch("/:id",authMiddleware,roleMiddleware("RECRUITER"), updateJob)
 

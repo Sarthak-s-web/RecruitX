@@ -1,35 +1,31 @@
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 
-const authMiddleware = async(req,res,next)=>{
+const authMiddleware = async (req, res, next) => {
     try {
-        const authHeader = req.headers.authorization;
+        const accessToken = req.cookies.accessToken;
 
-        if(!authHeader || !authHeader.startsWith("Bearer "))
-        {
+        if (!accessToken) {
             return res.status(401).json({
-                message:"Access token is required"
-            })
+                message: "Access token is required"
+            });
         }
-
-        const accessToken = authHeader.split(" ")[1]
 
         const decoded = jwt.verify(
             accessToken,
             process.env.ACCESS_TOKEN_SECRET
-        )
+        );
 
-        req.user = decoded
-        
+        req.user = decoded;
+
         next();
 
     } catch (error) {
-        console.log("Auth middleware error:",error.message);
+        console.log("Auth middleware error:", error.message);
 
         return res.status(401).json({
-            message:"Invalid or expired access token"
-        })
-        
+            message: "Invalid or expired access token"
+        });
     }
-}
+};
 
-module.exports = authMiddleware
+module.exports = authMiddleware;
