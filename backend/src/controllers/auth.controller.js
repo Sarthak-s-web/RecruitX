@@ -10,7 +10,7 @@ const registerUser = async(req,res)=>{
     try {
 
         //1. Get data from request
-        const{name, email ,password} = req.body;
+        const{name, email ,password,role} = req.body;
 
         //2. Validate user
         if(!name || !email || !password){
@@ -33,7 +33,8 @@ const registerUser = async(req,res)=>{
         const user = await User.create({
             name,
             email,
-            passwordHash
+            passwordHash,
+            role
         })
 
         //6.create session
