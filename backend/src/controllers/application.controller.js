@@ -34,6 +34,14 @@ const applyJob = async(req,res)=>{
             })
         }
 
+        if (coverLetter !== undefined && coverLetter !== null) {
+            if (typeof coverLetter !== "string" || coverLetter.trim().length > 5000) {
+                return res.status(400).json({
+                    message: "Cover letter must be text and not exceed 5000 characters"
+                });
+            }
+        }
+
         if(!req.file){
             return res.status(400).json({
                 message:"Resume is required"
@@ -46,7 +54,7 @@ const applyJob = async(req,res)=>{
             applicant: req.user.userId,
             job: jobId,
             resumeUrl:result.secure_url,
-            coverLetter
+            coverLetter: typeof coverLetter === "string" ? coverLetter.trim() : undefined
         })
 
 
@@ -59,6 +67,12 @@ const applyJob = async(req,res)=>{
     } catch (error) {
 
         console.log("Apply for job error:",error.message);
+
+        if (error.code === 11000) {
+            return res.status(400).json({
+                message: "You have already applied for this job"
+            });
+        }
 
         return res.status(500).json({
             message:"Internal server error"
@@ -143,7 +157,13 @@ const updateApplicationStatus = async(req,res)=>{
             })
         }
 
-        const normalizedStatus = status?.toUpperCase();
+        if (!status || typeof status !== "string") {
+            return res.status(400).json({
+                message: "Application status is required"
+            });
+        }
+
+        const normalizedStatus = status.trim().toUpperCase();
 
     
         const allowedStatus = [

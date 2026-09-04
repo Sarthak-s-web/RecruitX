@@ -16,7 +16,7 @@ const roleMiddleware = require("../middlewares/role.middleware")
 
 router.post("/" ,authMiddleware,roleMiddleware("RECRUITER"), createJob);
 
-router.get("/",authMiddleware, getAllJobs)
+router.get("/", getAllJobs)
 
 router.get(
     "/my",
@@ -25,7 +25,7 @@ router.get(
     getMyJobs
 );
 
-router.get("/:id",authMiddleware,getJobById)
+router.get("/:id",getJobById)
 
 router.patch("/:id",authMiddleware,roleMiddleware("RECRUITER"), updateJob)
 

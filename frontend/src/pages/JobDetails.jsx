@@ -1,9 +1,8 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   MapPin,
-  Briefcase,
   DollarSign,
   Building2,
   Calendar,
@@ -26,13 +25,13 @@ import {
 export default function JobDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated, isJobSeeker } = useAuth();
+  const { isAuthenticated, isJobSeeker, isRecruiter } = useAuth();
 
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const fetchJob = async () => {
+  const fetchJob = useCallback(async () => {
     setLoading(true);
     setError("");
 
@@ -47,11 +46,11 @@ export default function JobDetails() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
 
   useEffect(() => {
     fetchJob();
-  }, [id]);
+  }, [fetchJob]);
 
   const handleApplyClick = () => {
     if (!isAuthenticated) {
@@ -158,6 +157,12 @@ export default function JobDetails() {
             <Button onClick={handleApplyClick} className="flex-shrink-0">
               Apply Now
             </Button>
+          )}
+
+          {isAuthenticated && isRecruiter && (
+            <span className="inline-flex items-center rounded-lg bg-slate-100 px-3 py-2 text-xs font-medium text-slate-600">
+              Logged in as Recruiter
+            </span>
           )}
 
           {!isAuthenticated && (

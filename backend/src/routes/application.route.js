@@ -1,20 +1,23 @@
-const express = require("express")
+const express = require("express");
 const multer = require("multer");
-const router = express.Router()
-const authMiddleware = require("../middlewares/auth.middlewar")
-const roleMiddleware = require("../middlewares/role.middleware")
 
-const {applyJob,
+const router = express.Router();
+
+const authMiddleware = require("../middlewares/auth.middlewar");
+const roleMiddleware = require("../middlewares/role.middleware");
+const upload = require("../middlewares/upload.middleware");
+
+const {
+    applyJob,
     getJobApplication,
     updateApplicationStatus,
     getMyApplication,
     getRecruiterDashboard
-} = require("../controllers/application.controller")
+} = require("../controllers/application.controller");
 
-const upload = require("../middlewares/upload.middleware")
 
+// Resume upload error handling
 const uploadResume = (req, res, next) => {
-
     upload.single("resume")(req, res, (error) => {
 
         if (error instanceof multer.MulterError) {
@@ -41,6 +44,7 @@ const uploadResume = (req, res, next) => {
 };
 
 
+// JOB SEEKER: Apply for a job
 router.post(
     "/:jobId",
     authMiddleware,
@@ -50,13 +54,16 @@ router.post(
 );
 
 
+// JOB SEEKER: Get my applications
 router.get(
-    "/job/:jobId",
+    "/my",
     authMiddleware,
-    roleMiddleware("RECRUITER"),
-    getJobApplication
+    roleMiddleware("JOB_SEEKER"),
+    getMyApplication
 );
 
+
+// RECRUITER: Get dashboard
 router.get(
     "/dashboard",
     authMiddleware,
@@ -64,6 +71,17 @@ router.get(
     getRecruiterDashboard
 );
 
+
+// RECRUITER: Get applications for a specific job
+router.get(
+    "/job/:jobId",
+    authMiddleware,
+    roleMiddleware("RECRUITER"),
+    getJobApplication
+);
+
+
+// RECRUITER: Update application status
 router.patch(
     "/:applicationId/status",
     authMiddleware,
@@ -71,9 +89,5 @@ router.patch(
     updateApplicationStatus
 );
 
-router.get("/my",authMiddleware, roleMiddleware("JOB_SEEKER"),getMyApplication)
 
-
-
-
-module.exports = router
+module.exports = router;

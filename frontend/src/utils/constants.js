@@ -45,8 +45,10 @@ export const formatDate = (dateString) => {
 };
 
 export const formatSalary = (salary) => {
-  if (!salary && salary !== 0) return "Not disclosed";
-  return `$${salary.toLocaleString()}`;
+  if (salary === null || salary === undefined || salary === "" || isNaN(Number(salary))) {
+    return "Not disclosed";
+  }
+  return `$${Number(salary).toLocaleString()}`;
 };
 
 export const getErrorMessage = (error) => {

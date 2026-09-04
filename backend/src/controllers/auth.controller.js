@@ -6,6 +6,16 @@ const jwt = require("jsonwebtoken")
 
 const {generateAccessToken, generateRefreshToken} = require("../utils/generateToken")
 
+const isProduction = process.env.NODE_ENV === "production";
+const getCookieOptions = (maxAge) => ({
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    ...(maxAge ? { maxAge } : {})
+});
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const registerUser = async(req,res)=>{
     try {
 
@@ -19,13 +29,41 @@ const registerUser = async(req,res)=>{
         }
 
         //2. Validate user
-        if(!name || !email || !password){
+        if (!name || typeof name !== "string" || !name.trim()) {
             return res.status(400).json({
-                message:"Name, email, password is required"
-            })
+                message: "Name is required"
+            });
         }
+
+        const trimmedName = name.trim();
+        if (trimmedName.length < 2 || trimmedName.length > 100) {
+            return res.status(400).json({
+                message: "Name must be between 2 and 100 characters"
+            });
+        }
+
+        if (!email || typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+            return res.status(400).json({
+                message: "A valid email address is required"
+            });
+        }
+
+        if (!password || typeof password !== "string" || password.length < 6) {
+            return res.status(400).json({
+                message: "Password must be at least 6 characters long"
+            });
+        }
+
+        if (password.length > 128) {
+            return res.status(400).json({
+                message: "Password must not exceed 128 characters"
+            });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+
         //3.Check if user already exists
-        const existingUser = await User.findOne({email})
+        const existingUser = await User.findOne({ email: normalizedEmail });
         if(existingUser){
             return res.status(409).json({
                 message:"User already exists"
@@ -37,8 +75,8 @@ const registerUser = async(req,res)=>{
 
         //5.create user
         const user = await User.create({
-            name,
-            email,
+            name: trimmedName,
+            email: normalizedEmail,
             passwordHash,
             role
         })
@@ -66,19 +104,8 @@ const registerUser = async(req,res)=>{
         await session.save();
 
         // Store tokens in HTTP-only cookies
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: false, // true in production with HTTPS
-            sameSite: "lax",
-            maxAge: 15 * 60 * 1000
-        });
-
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: false, // true in production with HTTPS
-            sameSite: "lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
+        res.cookie("refreshToken", refreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000));
 
         return res.status(201).json({
             message:"User registered successfully",
@@ -102,13 +129,13 @@ const loginUser = async(req,res)=>{
     try {
         const { email, password } = req.body;
 
-        if(!email || !password){
+        if (!email || !password || typeof email !== "string" || typeof password !== "string") {
             return res.status(400).json({
-                message:"Email and Password is required"
+                message: "Email and Password are required"
             });
         }
 
-        const user = await User.findOne({email}).select("+passwordHash");
+        const user = await User.findOne({ email: email.trim().toLowerCase() }).select("+passwordHash");
 
         if(!user){
             return res.status(401).json({
@@ -150,19 +177,8 @@ const loginUser = async(req,res)=>{
         await session.save();
 
         // Store tokens in HTTP-only cookies
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: false, // true in production with HTTPS
-            sameSite: "lax",
-            maxAge: 15 * 60 * 1000
-        });
-
-        res.cookie("refreshToken", refreshToken, {
-            httpOnly: true,
-            secure: false, // true in production with HTTPS
-            sameSite: "lax",
-            maxAge: 7 * 24 * 60 * 60 * 1000
-        });
+        res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
+        res.cookie("refreshToken", refreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000));
 
         return res.status(200).json({
             message:"Login successfully",
@@ -257,19 +273,8 @@ const refreshAccessToken = async (req, res) => {
         await session.save()
 
         // Store new access token in HTTP-only cookie
-        res.cookie("accessToken", accessToken, {
-            httpOnly: true,
-            secure: false, // true in production with HTTPS
-            sameSite: "lax",
-            maxAge: 15 * 60 * 1000
-        });
-
-        res.cookie("refreshToken", newRefreshToken, {
-            httpOnly: true,
-            secure: false, // true in production with HTTPS
-            sameSite: "lax",
-            maxAge: 7*24 * 60 * 60 * 1000
-        });
+        res.cookie("accessToken", accessToken, getCookieOptions(15 * 60 * 1000));
+        res.cookie("refreshToken", newRefreshToken, getCookieOptions(7 * 24 * 60 * 60 * 1000));
 
         return res.status(200).json({
             message: "Access token refreshed successfully"
@@ -305,8 +310,8 @@ const logoutUser = async (req, res) => {
         }
 
         // Clear cookies
-        res.clearCookie("accessToken");
-        res.clearCookie("refreshToken");
+        res.clearCookie("accessToken", getCookieOptions());
+        res.clearCookie("refreshToken", getCookieOptions());
 
         return res.status(200).json({
             message: "Logout Successful"

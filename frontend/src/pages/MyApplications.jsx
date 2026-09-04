@@ -17,7 +17,8 @@ export default function MyApplications() {
     setError("");
     try {
       const res = await applicationService.getMy();
-      setApplications(Array.isArray(res.data) ? res.data : res.data.applications || []);
+      const apps = res.data?.applications || res.data || [];
+      setApplications(Array.isArray(apps) ? apps : []);
     } catch (err) {
       setError(getErrorMessage(err));
     } finally {

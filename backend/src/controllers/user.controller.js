@@ -1,5 +1,7 @@
 const User = require("../models/user.model")
 
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 const getProfile = async(req,res)=>{
 
     try {
@@ -15,7 +17,13 @@ const getProfile = async(req,res)=>{
     
         return res.status(200).json({
             message:"Profile fetched Successfully",
-            user
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt
+            }
         })
     } catch (error) {
         console.log("Get profile error:",error.message);
@@ -41,19 +49,35 @@ const updateProfile = async(req,res)=>{
             })
         }
 
-        if(name){
-            user.name= name
+        if(name !== undefined){
+            if (typeof name !== "string" || !name.trim() || name.trim().length < 2 || name.trim().length > 100) {
+                return res.status(400).json({
+                    message: "Name must be between 2 and 100 characters"
+                });
+            }
+            user.name = name.trim();
         }
 
-        if(email){
-            user.email = email
+        if(email !== undefined){
+            if (typeof email !== "string" || !EMAIL_REGEX.test(email.trim())) {
+                return res.status(400).json({
+                    message: "A valid email address is required"
+                });
+            }
+            user.email = email.trim().toLowerCase();
         }
 
         await user.save()
 
         return res.status(200).json({
             message: "Profile updated successfully",
-            user
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt
+            }
         });
 
     } catch (error) {

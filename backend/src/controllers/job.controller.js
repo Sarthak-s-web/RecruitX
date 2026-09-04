@@ -2,6 +2,11 @@ const Job = require("../models/job.model")
 const Application = require("../models/application.model")
 const mongoose = require("mongoose")
 
+const escapeRegex = (str) => {
+    if (typeof str !== "string") return "";
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+};
+
 const createJob = async(req,res)=>{
     try {
         
@@ -15,22 +20,39 @@ const createJob = async(req,res)=>{
             jobType
         } = req.body
 
-        if(!title || !company || !description || !location || salary===undefined || !skills || !jobType)
+        if(!title || typeof title !== "string" || !title.trim() ||
+           !company || typeof company !== "string" || !company.trim() ||
+           !description || typeof description !== "string" || !description.trim() ||
+           !location || typeof location !== "string" || !location.trim() ||
+           salary === undefined || !skills || !jobType)
         {
             return res.status(400).json({
-                message:"All fields are required"
+                message: "All fields are required and must be valid non-empty values"
             })
         }
 
-        if (typeof salary !== "number" || salary < 0) {
+        if (title.trim().length > 200 || company.trim().length > 100 || location.trim().length > 200 || description.trim().length > 10000) {
+            return res.status(400).json({
+                message: "One or more text fields exceed maximum allowed length"
+            });
+        }
+
+        if (typeof salary !== "number" || isNaN(salary) || salary < 0) {
             return res.status(400).json({
                 message: "Salary must be a valid positive number"
             });
         }
 
-        if (!Array.isArray(skills) || skills.length === 0) {
+        if (!Array.isArray(skills)) {
             return res.status(400).json({
-                message: "Skills must be a non-empty array"
+                message: "Skills must be an array"
+            });
+        }
+
+        const sanitizedSkills = skills.map(s => typeof s === "string" ? s.trim() : "").filter(Boolean);
+        if (sanitizedSkills.length === 0) {
+            return res.status(400).json({
+                message: "Skills must contain at least one valid skill"
             });
         }
 
@@ -54,12 +76,12 @@ const createJob = async(req,res)=>{
         }
 
         const job = await Job.create({
-            title,
-            company,
-            description,
-            location,
+            title: title.trim(),
+            company: company.trim(),
+            description: description.trim(),
+            location: location.trim(),
             salary,
-            skills,
+            skills: sanitizedSkills,
             jobType:normalizedJobType,
             createdBy:req.user.userId
         });
@@ -83,18 +105,19 @@ const getAllJobs = async(req,res)=>{
 
         let filter ={}
 
-        if(search){
+        if(search && typeof search === "string" && search.trim()){
+            const escapedSearch = escapeRegex(search.trim());
             filter = {
                 $or:[
                     {
                         title:{
-                            $regex:search,
+                            $regex: escapedSearch,
                             $options:"i"
                         },
                     },
                     {
                         company:{
-                            $regex: search,
+                            $regex: escapedSearch,
                             $options: "i"
                         }
                     }
@@ -102,20 +125,20 @@ const getAllJobs = async(req,res)=>{
             }
         }
 
-        if(location){
+        if(location && typeof location === "string" && location.trim()){
             filter.location ={
-                        $regex:location,
-                        $options:"i"
-                    }
+                $regex: escapeRegex(location.trim()),
+                $options:"i"
+            }
         }
         
-        if(jobType){
-            filter.jobType = jobType.toUpperCase()
+        if(jobType && typeof jobType === "string" && jobType.trim()){
+            filter.jobType = jobType.trim().toUpperCase()
         }
 
-        if(skills){
+        if(skills && typeof skills === "string" && skills.trim()){
             filter.skills = {
-                $regex:skills,
+                $regex: escapeRegex(skills.trim()),
                 $options:"i"
             }
         }
@@ -252,35 +275,42 @@ const updateJob = async(req,res)=>{
             }
         }
 
+        let sanitizedSkills;
         if (skills !== undefined) {
-            if (!Array.isArray(skills) || skills.length === 0) {
+            if (!Array.isArray(skills)) {
                 return res.status(400).json({
-                    message: "Skills must be a non-empty array"
+                    message: "Skills must be an array"
+                });
+            }
+            sanitizedSkills = skills.map(s => typeof s === "string" ? s.trim() : "").filter(Boolean);
+            if (sanitizedSkills.length === 0) {
+                return res.status(400).json({
+                    message: "Skills must contain at least one valid skill"
                 });
             }
         }
 
-        if (title !== undefined && (typeof title !== "string" || !title.trim())) {
+        if (title !== undefined && (typeof title !== "string" || !title.trim() || title.trim().length > 200)) {
             return res.status(400).json({
-                message: "Title cannot be empty"
+                message: "Title cannot be empty or exceed 200 characters"
             });
         }
 
-        if (company !== undefined && (typeof company !== "string" || !company.trim())) {
+        if (company !== undefined && (typeof company !== "string" || !company.trim() || company.trim().length > 100)) {
             return res.status(400).json({
-                message: "Company cannot be empty"
+                message: "Company cannot be empty or exceed 100 characters"
             });
         }
 
-        if (description !== undefined && (typeof description !== "string" || !description.trim())) {
+        if (description !== undefined && (typeof description !== "string" || !description.trim() || description.trim().length > 10000)) {
             return res.status(400).json({
-                message: "Description cannot be empty"
+                message: "Description cannot be empty or exceed 10000 characters"
             });
         }
 
-        if (location !== undefined && (typeof location !== "string" || !location.trim())) {
+        if (location !== undefined && (typeof location !== "string" || !location.trim() || location.trim().length > 200)) {
             return res.status(400).json({
-                message: "Location cannot be empty"
+                message: "Location cannot be empty or exceed 200 characters"
             });
         }
 
@@ -314,7 +344,7 @@ const updateJob = async(req,res)=>{
         if (description !== undefined) job.description = description.trim();
         if (location !== undefined) job.location = location.trim();
         if (salary !== undefined) job.salary = salary;
-        if (skills !== undefined) job.skills = skills;
+        if (sanitizedSkills !== undefined) job.skills = sanitizedSkills;
         if (normalizedJobType !== undefined) job.jobType = normalizedJobType;
 
         await job.save();

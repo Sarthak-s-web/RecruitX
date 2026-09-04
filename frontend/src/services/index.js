@@ -31,4 +31,5 @@ export const applicationService = {
 
 export const userService = {
   getProfile: () => api.get("/users/profile"),
+  updateProfile: (data) => api.patch("/users/profile", data),
 };

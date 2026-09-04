@@ -27,9 +27,7 @@ export default function Landing() {
     ? isRecruiter
       ? { label: "View Dashboard", to: "/recruiter/dashboard" }
       : { label: "My Applications", to: "/my-applications" }
-    : isRecruiter
-      ? { label: "Post a Job", to: "/recruiter/jobs/create" }
-      : { label: "Post a Job", to: "/register" };
+    : { label: "Post a Job", to: "/register" };
 
   return (
     <div className="animate-fade-in">
