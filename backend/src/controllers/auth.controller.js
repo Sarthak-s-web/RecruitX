@@ -201,7 +201,7 @@ const refreshAccessToken = async (req, res) => {
         );
 
         // Hash refresh token
-        const refreshTokenHash = crypto
+        const oldRefreshTokenHash = crypto
             .createHash("sha256")
             .update(refreshToken)
             .digest("hex");
@@ -210,7 +210,7 @@ const refreshAccessToken = async (req, res) => {
         const session = await Session.findOne({
             _id: decoded.sessionId,
             userId: decoded.userId,
-            refreshTokenHash
+            refreshTokenHash:oldRefreshTokenHash
         });
 
         if (!session) {
@@ -238,12 +238,37 @@ const refreshAccessToken = async (req, res) => {
         // Generate new access token
         const accessToken = generateAccessToken(user);
 
+        const newRefreshToken = generateRefreshToken(
+            user,
+            session._id
+        )
+
+        const newRefreshTokenHash = crypto
+        .createHash("sha256")
+        .update(newRefreshToken)
+        .digest("hex")
+
+        session.refreshTokenHash = newRefreshTokenHash
+
+        session.expiresAt= new Date(
+            Date.now() + 7*24*60*60*1000 
+        )
+
+        await session.save()
+
         // Store new access token in HTTP-only cookie
         res.cookie("accessToken", accessToken, {
             httpOnly: true,
             secure: false, // true in production with HTTPS
             sameSite: "lax",
             maxAge: 15 * 60 * 1000
+        });
+
+        res.cookie("refreshToken", newRefreshToken, {
+            httpOnly: true,
+            secure: false, // true in production with HTTPS
+            sameSite: "lax",
+            maxAge: 7*24 * 60 * 60 * 1000
         });
 
         return res.status(200).json({
@@ -265,26 +290,17 @@ const logoutUser = async (req, res) => {
         // Get refresh token from HTTP-only cookie
         const refreshToken = req.cookies.refreshToken;
 
-        if (!refreshToken) {
-            return res.status(400).json({
-                message: "Refresh token is required"
-            });
-        }
+        if (refreshToken) {
+            
+            // Hash refresh token
+            const refreshTokenHash = crypto
+                .createHash("sha256")
+                .update(refreshToken)
+                .digest("hex");
 
-        // Hash refresh token
-        const refreshTokenHash = crypto
-            .createHash("sha256")
-            .update(refreshToken)
-            .digest("hex");
-
-        // Delete session
-        const session = await Session.findOneAndDelete({
-            refreshTokenHash
-        });
-
-        if (!session) {
-            return res.status(400).json({
-                message: "Invalid refresh token"
+            // Delete session
+            await Session.findOneAndDelete({
+                refreshTokenHash
             });
         }
 

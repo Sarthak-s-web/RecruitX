@@ -4,15 +4,15 @@ const sessionSchema = new mongoose.Schema({
     userId:{
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        require: true
+        required: true
     },
     refreshTokenHash:{
         type:String,
-        require:true
+        required:true
     },
     expiresAt:{
         type:Date,
-        require: true
+        required: true
     }
 }, {timestamps:true} );
 
